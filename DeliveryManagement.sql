@@ -51,6 +51,20 @@ CustomerID INT,
 FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
 );
 
+-- Trigger to track changes in the Orders table
+CREATE OR REPLACE TRIGGER Orders_Trigger
+BEFORE INSERT OR UPDATE OR DELETE ON Orders
+FOR EACH ROW
+BEGIN
+  IF INSERTING THEN
+    DBMS_OUTPUT.PUT_LINE('New order added with ID: ' || :NEW.OrderID);
+  ELSIF UPDATING THEN
+    DBMS_OUTPUT.PUT_LINE('Order updated with ID: ' || :OLD.OrderID || ' -> ' || :NEW.OrderID);
+  ELSIF DELETING THEN
+    DBMS_OUTPUT.PUT_LINE('Order deleted with ID: ' || :OLD.OrderID);
+  END IF;
+END;
+
 INSERT INTO Orders (OrderID, DeliveryAddress, CustomerID) VALUES (400, '415 Elm St Mt. Pleasant MI', 200);
 INSERT INTO Orders (OrderID, DeliveryAddress, CustomerID) VALUES (401, '102 Broomfield St Mt. Pleasant MI', 201);
 INSERT INTO Orders (OrderID, DeliveryAddress, CustomerID) VALUES (402, '6123 Lansing St Lansing MI', 202);
@@ -96,6 +110,18 @@ SELECT * FROM Items;
 SELECT * FROM Orders;
 SELECT * FROM OrderItems;
 SELECT * FROM Website;
+
+-- View to display items delivered with details and order status
+CREATE VIEW DeliveredItems AS
+SELECT i.Name, i.Price, w.FulfillmentStatus
+FROM Items i
+JOIN OrderItems oi ON i.ItemID = oi.ItemID
+JOIN Orders o ON oi.OrderID = o.OrderID
+JOIN Website w ON o.OrderID = w.OrderID
+WHERE w.FulfillmentStatus = 'Delivered';
+
+-- Display the view
+SELECT * FROM DeliveredItems;
 
 --find the most expensive ItemID
 SELECT Name, MAX(Price) AS HighestPrice FROM Items GROUP BY Name;
